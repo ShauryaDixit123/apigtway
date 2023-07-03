@@ -12,11 +12,16 @@ type Handler struct {
 
 func InitUserRoutes(init configs.InitRoutes) {
 	r := init.Eng
-	tkn := r.Group("/tokens")
+	ro := r.Group("/tokens")
 	hnd := Handler{
 		rcl: init.Rcl,
 	}
+	ro.GET("/gen", hnd.GenAuth)
+	ro.POST("/refauth", hnd.RefreshAuth)
+	ro.Use(hnd.CheckAuth())
 	{
-		tkn.GET("/gen", hnd.GenAuth)
+		// secured routes
+		ro.GET("/ping", hnd.PingWithAuth)
+
 	}
 }

@@ -20,14 +20,29 @@ func extractToken(r *http.Request) string {
 	return ""
 }
 
-func VerifyToken(r *http.Request) (*jwt.Token, error) {
+func VerifyToken(r *http.Request, typetkn string) (*jwt.Token, error) {
+	var typeofKey string
+	switch typetkn {
+	case "access":
+		typeofKey = "ACCESS_SECRET_KEY"
+	case "refresh":
+		typeofKey = "REFRESH_SECRET_KEY"
+	}
 	tokenString := extractToken(r)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := ParseToken(tokenString, typeofKey)
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+func ParseToken(tkn string, key string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tkn, func(token *jwt.Token) (interface{}, error) {
 		//Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("ACCESS_SECRET_KEY")), nil
+		return []byte(os.Getenv(key)), nil
 	})
 	if err != nil {
 		return nil, err
@@ -35,8 +50,8 @@ func VerifyToken(r *http.Request) (*jwt.Token, error) {
 	return token, nil
 }
 
-func TokenValid(r *http.Request) error {
-	token, err := VerifyToken(r)
+func TokenValid(r *http.Request, typetkn string) error {
+	token, err := VerifyToken(r, typetkn)
 	if err != nil {
 		return err
 	}
@@ -46,14 +61,21 @@ func TokenValid(r *http.Request) error {
 	return nil
 }
 
-func ExtractMetaData(r *http.Request) (*dtos.AccessDetails, error) {
-	token, err := VerifyToken(r)
+func ExtractMetaData(r *http.Request, typetkn string) (*dtos.AccessDetails, error) {
+	var struuid string
+	token, err := VerifyToken(r, typetkn)
 	if err != nil {
 		return nil, err
 	}
+	switch typetkn {
+	case "access":
+		struuid = "access_uuid"
+	case "refresh":
+		struuid = "refresh_uuid"
+	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		accessUuid, ok := claims["access_uuid"].(string)
+		accessUuid, ok := claims[struuid].(string)
 		if !ok {
 			return nil, err
 		}

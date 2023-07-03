@@ -13,3 +13,6 @@ type AccessDetails struct {
 	AccessUUID string
 	UserID     uint64
 }
+type RefreshDetails struct {
+	RefreshToken string
+}

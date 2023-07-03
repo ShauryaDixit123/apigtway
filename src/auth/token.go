@@ -75,3 +75,11 @@ func (s *Service) FetchAuth(ad dtos.AccessDetails) (uint64, error) {
 	userID, _ := strconv.ParseUint(userid, 10, 64)
 	return userID, nil
 }
+
+func (s *Service) DeleteAuth(id string) (int64, error) {
+	deleted, err := s.Rcl.Del(id).Result()
+	if err != nil {
+		return 0, err
+	}
+	return deleted, nil
+}
